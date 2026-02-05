@@ -122,29 +122,20 @@ function detectarBypassShell() {
     echo "\n" . $bold . $azul . "► [4] VERIFICANDO PROPRIEDADES DO SISTEMA\n";
     echo $bold . $azul . "-----------------------------------------\n" . $cln;
     
-    $propriedadesSuspeitas = [
-        'ro.debuggable' => ['valor' => '1', 'descricao' => 'Modo debug ativado'],
-        'ro.secure' => ['valor' => '0', 'descricao' => 'Segurança desativada'],
-        'service.adb.root' => ['valor' => '1', 'descricao' => 'ADB root ativo'],
-        'ro.build.selinux' => ['valor' => '0', 'descricao' => 'SELinux desabilitado'],
-        'ro.boot.flash.locked' => ['valor' => '0', 'descricao' => 'Flash desbloqueado'],
-        'ro.boot.veritymode' => ['valor' => 'disabled', 'descricao' => 'dm-verity desabilitado'],
-        'sys.oem_unlock_allowed' => ['valor' => '1', 'descricao' => 'OEM unlock permitido'],
-        'persist.sys.usb.config' => ['valor' => 'adb', 'descricao' => 'ADB persistente ativo'],
-        'ro.kernel.qemu' => ['valor' => '1', 'descricao' => 'Emulador detectado'],
-    ];
+foreach ($propriedadesSuspeitas as $prop => $info) {
+    $valor = trim(shell_exec("adb shell getprop $prop 2>/dev/null"));
 
-    foreach ($propriedadesSuspeitas as $prop => $info) {
-        $valor = trim(shell_exec("adb shell getprop $prop 2>/dev/null"));
-        if ($valor === $info['valor']) {
-            echo $bold . $vermelho . "  ✗ Propriedade suspeita: $prop = $valor ({$info['descricao']})\n" . $cln;
-            $bypassDetectado = true;
-            $problemasEncontrados++;
-        }
-        $totalVerificacoes++;
+    if (
+        $prop === 'persist.sys.usb.config' || 
+        $valor === $info['valor']
+    ) {
+        echo $bold . $vermelho . "  ✗ Propriedade suspeita: $prop = $valor ({$info['descricao']})\n" . $cln;
+        $bypassDetectado = true;
+        $problemasEncontrados++;
     }
-    
-    echo $bold . $verde . "  ✓ Verificação de propriedades concluída\n" . $cln;
+
+    $totalVerificacoes++;
+}
 
 
     echo "\n" . $bold . $azul . "► [5] VERIFICANDO BINÁRIOS SU (SUPERUSUÁRIO)\n";
@@ -1444,7 +1435,7 @@ escolheropcoes:
     if (!in_array($opcaoscanner, array(
       '0',
       '1',
-      '2',	
+      '2',  
       'S',
   ), true))
     {
